@@ -6,12 +6,13 @@
 
     <parent>
         <artifactId>insane-advancements-parent</artifactId>
-        <groupId>me.hazedev</groupId>
+        <groupId>me.hazedev.advancements</groupId>
         <version>${revision}</version>
     </parent>
 
     <artifactId>insane-advancements-api</artifactId>
 	<name>InsaneAdvancementsAPI</name>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <repositories>
