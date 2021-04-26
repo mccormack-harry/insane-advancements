@@ -1,5 +1,6 @@
 # Insane Advancements
 Insane Advancements is my rewrite of [ZockerAxel's CrazyAdvancementsAPI](https://github.com/ZockerAxel/CrazyAdvancementsAPI)
+- **Warning** - The API is in very early stages, could change significantly. Not reccomended for use in production servers yet.
 
 ## Download
 [**Plugin**](https://github.com/haz8989/insane-advancements/releases) <br>
@@ -20,6 +21,7 @@ Insane Advancements is my rewrite of [ZockerAxel's CrazyAdvancementsAPI](https:/
 - Support for all versions 1.12+
 - Everything will be configurable in a config.yml file
 - Automatically position advancements in menu (Multiple modes)
+- Documentation
 
 ## Example Usage
 You must download and install the server plugin from above, and add the API as a dependency in your maven/gradle configuration.
