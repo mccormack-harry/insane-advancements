@@ -57,14 +57,15 @@
         <dependency>
             <groupId>me.hazedev.advancements</groupId>
             <artifactId>insane-advancements-api</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>me.hazedev.advancements</groupId>
             <artifactId>insane-advancements-v1_16_R3</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <groupId>org.spigotmc</groupId>

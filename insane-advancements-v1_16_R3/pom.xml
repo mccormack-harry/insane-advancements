@@ -22,7 +22,7 @@
         <dependency>
             <groupId>me.hazedev.advancements</groupId>
             <artifactId>insane-advancements-api</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

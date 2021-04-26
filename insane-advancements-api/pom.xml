@@ -15,15 +15,16 @@
     <version>${revision}</version>
     <packaging>jar</packaging>
 
-    <repositories>
+    <distributionManagement>
         <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <id>github</id>
+            <name>Github Packages</name>
+            <url>https://maven.pkg.github.com/haz8989/insane-advancements</url>
         </repository>
-    </repositories>
+    </distributionManagement>
 
     <build>
-        <plugins>
+    <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -52,6 +53,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>

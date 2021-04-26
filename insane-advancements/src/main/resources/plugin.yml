@@ -1,0 +1,5 @@
+name: ${project.name}
+main: ${project.groupId}.${project.name}
+version: ${revision}
+author: HazeDev
+website: https://github.com/haz8989/insane-advancements
