@@ -1,5 +1,6 @@
 package me.hazedev.advancements.api.meta;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.EntityEffect;
 import org.bukkit.Instrument;
@@ -53,6 +54,15 @@ public interface AdvancementReward {
     @NotNull
     static AdvancementReward message(@NotNull String message) {
         return player -> player.sendMessage(message);
+    }
+
+    /**
+     * @param message A message to announce globally in chat
+     * @return The reward
+     */
+    @NotNull
+    static AdvancementReward announce(@NotNull String message) {
+        return player -> Bukkit.broadcastMessage(message);
     }
 
     /**

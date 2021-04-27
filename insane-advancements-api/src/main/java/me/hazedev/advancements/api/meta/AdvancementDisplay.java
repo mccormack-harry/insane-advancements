@@ -18,7 +18,7 @@ public class AdvancementDisplay {
     private @NotNull String description = "Description";
     private @NotNull ItemStack icon = new ItemStack(Material.STONE);
     private @NotNull AdvancementType type = AdvancementType.TASK;
-    private boolean showToast, announce = true;
+    private boolean showToast = true;
     private NamespacedKey background = NamespacedKey.minecraft("textures/gui/advancements/backgrounds/stone.png");
 
     public AdvancementDisplay() {}
@@ -71,11 +71,6 @@ public class AdvancementDisplay {
 
     public @NotNull AdvancementDisplay toast(boolean showToast) {
         this.showToast = showToast;
-        return this;
-    }
-
-    public @NotNull AdvancementDisplay announce(boolean announce) {
-        this.announce = announce;
         return this;
     }
 
@@ -159,15 +154,6 @@ public class AdvancementDisplay {
      */
     public boolean isShowToast() {
         return showToast;
-    }
-
-
-    /**
-     * Default: true
-     * @return Whether this advancement should make an announcement when it's granted
-     */
-    public boolean isAnnounce() {
-        return announce;
     }
 
     /**

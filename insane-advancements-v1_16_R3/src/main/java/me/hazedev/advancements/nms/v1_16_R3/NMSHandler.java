@@ -245,7 +245,7 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
                     nmsBackgroundKey = convert(backgroundKey);
             }
             boolean isHidden = !advancement.isVisible(player);
-            AdvancementDisplay nmsDisplay = new AdvancementDisplay(convert(advancement.getIcon(player)), convert(advancement.getJsonTitle(player)), convert(advancement.getJsonDescription(player)), nmsBackgroundKey, convert(advancement.getType(player)), showToasts && advancement.isShowToast(player), advancement.isAnnounce(player), isHidden);
+            AdvancementDisplay nmsDisplay = new AdvancementDisplay(convert(advancement.getIcon(player)), convert(advancement.getJsonTitle(player)), convert(advancement.getJsonDescription(player)), nmsBackgroundKey, convert(advancement.getType(player)), showToasts && advancement.isShowToast(player), false, isHidden);
             nmsDisplay.a(advancement.getX(player), advancement.getY(player));
             AdvancementRewards nmsRewards = new AdvancementRewards(0, new MinecraftKey[0], new MinecraftKey[0], null);
             net.minecraft.server.v1_16_R3.Advancement nmsAdvancement = new net.minecraft.server.v1_16_R3.Advancement(convert(advancement.getKey()), parent, nmsDisplay, nmsRewards, criteria, requirements);

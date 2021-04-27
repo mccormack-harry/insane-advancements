@@ -270,11 +270,6 @@ public abstract class AbstractAdvancement implements Advancement {
     }
 
     @Override
-    public boolean isAnnounce(@NotNull Player player) {
-        return display.isAnnounce();
-    }
-
-    @Override
     public @Nullable NamespacedKey getBackground(@NotNull Player player) {
         return display.getBackground();
     }

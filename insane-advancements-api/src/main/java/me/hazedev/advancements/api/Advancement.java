@@ -172,13 +172,6 @@ public interface Advancement {
     }
 
     /**
-     * @return Whether an announcement should be displayed in chat when the player is granted this advancement
-     */
-    default boolean isAnnounce(@NotNull Player player) {
-        return true;
-    }
-
-    /**
      * This method is only relevant in advancements which don't have a parent (root advancements)
      * @return The background displayed in this advancement tab
      */
