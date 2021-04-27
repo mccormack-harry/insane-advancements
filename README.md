@@ -23,4 +23,3 @@ Insane Advancements is my rewrite of [ZockerAxel's CrazyAdvancementsAPI](https:/
 - Support for all versions 1.12+
 - Everything will be configurable in a config.yml file
 - Automatically position advancements in menu (Multiple modes)
-```
