@@ -1,6 +1,7 @@
 # Insane Advancements
 Insane Advancements is my rewrite of [ZockerAxel's CrazyAdvancementsAPI](https://github.com/ZockerAxel/CrazyAdvancementsAPI)
-- **Warning** - The API is in very early stages, could change significantly. Not reccomended for use in production servers yet.
+- **Warning** - ~~The API is in very early stages, could change significantly~~. Not reccomended for use in production servers yet.
+- The API is fairly stable, will be slightly polished and support will be added for all versions 1.12+, v1.0 is almost here!
 
 ## Download
 [**Spigot Plugin**](https://github.com/haz8989/insane-advancements/releases) <br>
