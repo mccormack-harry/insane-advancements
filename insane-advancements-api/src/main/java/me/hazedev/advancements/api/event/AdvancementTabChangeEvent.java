@@ -1,6 +1,6 @@
 package me.hazedev.advancements.api.event;
 
-import me.hazedev.advancements.api.advancement.Advancement;
+import me.hazedev.advancements.api.Advancement;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;

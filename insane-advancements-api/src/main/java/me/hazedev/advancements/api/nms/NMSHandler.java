@@ -1,7 +1,8 @@
 package me.hazedev.advancements.api.nms;
 
 import me.hazedev.advancements.api.AdvancementManager;
-import me.hazedev.advancements.api.advancement.Advancement;
+import me.hazedev.advancements.api.Advancement;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,9 +36,11 @@ public abstract class NMSHandler {
 
     public abstract void sendAdvancementTab(@NotNull Player player, @NotNull Advancement advancement);
 
-    public abstract void updateProgress(@NotNull Player player, @NotNull Advancement advancement);
+    public abstract void updateAdvancement(Player player, Advancement advancement);
 
     public abstract void sendToasts(@NotNull Player player, @NotNull Advancement... advancements);
+
+    public abstract void setActiveTab(@NotNull Player player, @NotNull NamespacedKey key);
 
     public abstract void clearAdvancements(@NotNull Player player);
 

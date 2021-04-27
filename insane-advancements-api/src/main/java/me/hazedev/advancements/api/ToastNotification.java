@@ -1,31 +1,34 @@
 package me.hazedev.advancements.api;
 
-import me.hazedev.advancements.api.advancement.AbstractAdvancement;
-import me.hazedev.advancements.api.advancement.Advancement;
-import me.hazedev.advancements.api.advancement.meta.AdvancementFrame;
+import me.hazedev.advancements.api.meta.AdvancementDisplay;
+import me.hazedev.advancements.api.meta.AdvancementType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+
 public class ToastNotification extends AbstractAdvancement {
 
-    private static final NamespacedKey KEY = new NamespacedKey("toast", "notification");
+    private static final String NAMESPACE = "toast";
 
-    public ToastNotification(@NotNull AdvancementManager manager) {
-        super(manager, KEY);
+    private static NamespacedKey getRandomKey() {
+        return new NamespacedKey(NAMESPACE, UUID.randomUUID().toString());
     }
 
-    public ToastNotification(@NotNull AdvancementManager manager, @NotNull AdvancementFrame frame, @NotNull ItemStack icon, @NotNull String title) {
-        this(manager);
-        setFrame(frame);
-        setIcon(icon);
-        setTitle(title);
+    public ToastNotification(@NotNull AdvancementManager manager, @NotNull AdvancementDisplay display) {
+        super(manager, getRandomKey(), display);
     }
 
-    public ToastNotification(@NotNull Player player, @NotNull Advancement advancement) {
-        this(advancement.getManager(), advancement.getFrame(player), advancement.getIcon(player), advancement.getTitle(player));
+    public ToastNotification(@NotNull AdvancementManager manager, @NotNull AdvancementType frame, @NotNull ItemStack icon, @NotNull String title) {
+        this(manager, new AdvancementDisplay().type(frame).icon(icon).title(title));
+    }
+
+    @Override
+    public @NotNull String getIdentifier() {
+        return getKey().getKey();
     }
 
     @Override
@@ -44,13 +47,15 @@ public class ToastNotification extends AbstractAdvancement {
     }
 
     @Override
-    public boolean isVisibile(@NotNull Player player) {
+    public boolean isVisible(@NotNull Player player) {
         return true;
     }
 
     @Override
-    public boolean doToast(@NotNull Player player) {
+    public boolean isShowToast(@NotNull Player player) {
         return true;
     }
+
+
 
 }

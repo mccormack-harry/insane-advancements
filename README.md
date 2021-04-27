@@ -16,10 +16,10 @@ Insane Advancements is my rewrite of [ZockerAxel's CrazyAdvancementsAPI](https:/
 - Easily send advancement toast notifications
 - [Custom events](insane-advancements-api/src/main/java/me/hazedev/advancements/api/event)
 - Set x,z co-ordinates of advancements in the menu
+- Documentation
 
 **Coming Very Soon**
 - Support for all versions 1.12+
 - Everything will be configurable in a config.yml file
 - Automatically position advancements in menu (Multiple modes)
-- Documentation
 ```

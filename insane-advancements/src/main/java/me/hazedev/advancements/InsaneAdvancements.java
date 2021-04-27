@@ -1,16 +1,18 @@
 package me.hazedev.advancements;
 
 import me.hazedev.advancements.api.AdvancementManager;
-import me.hazedev.advancements.api.advancement.Advancement;
+import me.hazedev.advancements.api.Advancement;
 import me.hazedev.advancements.api.event.AdvancementGrantEvent;
 import me.hazedev.advancements.api.event.AdvancementProgressEvent;
 import me.hazedev.advancements.api.nms.NMSHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,27 +29,46 @@ import java.util.stream.Collectors;
 public class InsaneAdvancements extends AdvancementManager implements Listener {
 
     private NMSHandler nmsHandler;
+    private BukkitTask autosaveTask;
     private final List<Advancement> advancementTabs = new ArrayList<>();
+
+    public InsaneAdvancements() {}
 
     @Override
     public void onEnable() {
         if (setupNMSHandler()) {
             Bukkit.getPluginManager().registerEvents(this, this);
             nmsHandler.addPacketListeners(Bukkit.getOnlinePlayers());
+            reload();
+            instance = this;
         }
     }
 
     @Override
     public void onDisable() {
+        if (autosaveTask != null) {
+            autosaveTask.cancel();
+            autosaveTask = null;
+        }
         saveAll();
         if (nmsHandler != null) {
             nmsHandler.removePacketListeners(Bukkit.getOnlinePlayers());
+        }
+        instance = null;
+    }
+
+    public void reload() {
+        if (isEnabled()) {
+            saveDefaultConfig();
+            reloadConfig();
+            long autosaveDelay = 20 * getConfig().getLong("autosave-delay", 300);
+            autosaveTask = Bukkit.getScheduler().runTaskTimer(this, this::saveAll, autosaveDelay, autosaveDelay);
         }
     }
 
     @Override
     public void saveAll() {
-        advancementTabs.forEach(tab -> Bukkit.getOnlinePlayers().forEach(tab::saveProgress));
+        advancementTabs.forEach(tab -> tab.saveProgress(true));
     }
 
     private boolean setupNMSHandler() {
@@ -84,11 +105,8 @@ public class InsaneAdvancements extends AdvancementManager implements Listener {
     public void registerAdvancementTabs(@NotNull List<Advancement> advancements) {
         List<Advancement> tabs = advancements.stream().filter(advancement -> advancement != null && advancement.getParent() == null).collect(Collectors.toList());
         this.advancementTabs.addAll(tabs);
-        Bukkit.getOnlinePlayers().forEach(player -> {
-            final UUID uniqueId = player.getUniqueId();
-            tabs.forEach(tab -> tab.loadProgress(uniqueId));
-            nmsHandler.sendAdvancementTabs(player, tabs);
-        });
+        tabs.forEach(tab -> tab.loadProgress(Bukkit.getOnlinePlayers(), true));
+        Bukkit.getOnlinePlayers().forEach(player -> nmsHandler.sendAdvancementTabs(player, tabs));
     }
 
     @Override
@@ -113,29 +131,35 @@ public class InsaneAdvancements extends AdvancementManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerJoin(PlayerJoinEvent event) {
+        this.advancementTabs.forEach(tab -> tab.loadProgress(event.getPlayer(), true));
+        nmsHandler.addPacketListener(event.getPlayer());
+        final UUID uniqueId = event.getPlayer().getUniqueId();
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            nmsHandler.addPacketListener(event.getPlayer());
-            advancementTabs.forEach(tab -> tab.loadProgress(event.getPlayer()));
-            nmsHandler.sendAdvancementTabs(event.getPlayer(), advancementTabs);
-        }, 5);
+            Player player = Bukkit.getPlayer(uniqueId);
+            if (player != null) {
+                nmsHandler.sendAdvancementTabs(player, getTabs());
+            }
+        }, 2);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerQuit(PlayerQuitEvent event) {
         nmsHandler.removePacketListener(event.getPlayer());
-        advancementTabs.forEach(advancement -> advancement.saveProgress(event.getPlayer()));
         nmsHandler.clearCache(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onAdvancementGrant(AdvancementGrantEvent event) {
-        Bukkit.broadcastMessage(event.getPlayer().getName() + " granted " + event.getAdvancement().getKey());
-        nmsHandler.sendToasts(event.getPlayer(), event.getAdvancement());
+        Player player = event.getPlayer();
+        Advancement advancement = event.getAdvancement();
+        Bukkit.broadcastMessage(player.getName() + " has made the advancement " + advancement.getTitle(player));
+        nmsHandler.sendToasts(player, advancement);
+        nmsHandler.sendAdvancementTab(player, advancement);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onAdvancementProgress(AdvancementProgressEvent event) {
-        nmsHandler.updateProgress(event.getPlayer(), event.getAdvancement());
+        nmsHandler.updateAdvancement(event.getPlayer(), event.getAdvancement());
     }
 
 }
