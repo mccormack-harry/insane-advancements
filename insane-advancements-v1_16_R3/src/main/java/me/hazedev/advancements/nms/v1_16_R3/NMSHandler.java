@@ -239,7 +239,7 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
             }
 
             MinecraftKey nmsBackgroundKey = null;
-            if (advancement.getParent() != null) {
+            if (advancement.getParent() == null) {
                 NamespacedKey backgroundKey = advancement.getBackground(player);
                 if (backgroundKey != null)
                     nmsBackgroundKey = convert(backgroundKey);
