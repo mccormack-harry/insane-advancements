@@ -10,17 +10,17 @@ import me.hazedev.advancements.api.Advancement;
 import me.hazedev.advancements.api.meta.AdvancementType;
 import me.hazedev.advancements.api.event.AdvancementScreenCloseEvent;
 import me.hazedev.advancements.api.event.AdvancementTabChangeEvent;
-import net.minecraft.server.v1_19_R2.AdvancementDisplay;
-import net.minecraft.server.v1_19_R2.AdvancementFrameType;
-import net.minecraft.server.v1_19_R2.AdvancementProgress;
-import net.minecraft.server.v1_19_R2.AdvancementRewards;
-import net.minecraft.server.v1_19_R2.Criterion;
-import net.minecraft.server.v1_19_R2.CriterionTriggerImpossible;
-import net.minecraft.server.v1_19_R2.IChatBaseComponent;
-import net.minecraft.server.v1_19_R2.MinecraftKey;
-import net.minecraft.server.v1_19_R2.PacketPlayInAdvancements;
-import net.minecraft.server.v1_19_R2.PacketPlayOutAdvancements;
-import net.minecraft.server.v1_19_R2.PacketPlayOutSelectAdvancementTab;
+import net.minecraft.advancements.AdvancementDisplay;
+import net.minecraft.advancements.AdvancementFrameType;
+import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.advancements.AdvancementRewards;
+import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.protocol.game.ServerboundSeenAdvancementsPacket;
+import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
+import net.minecraft.network.protocol.game.ClientboundSelectAdvancementsTabPacket;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
 
-    Map<UUID, Map<NamespacedKey, net.minecraft.server.v1_19_R2.Advancement>> advancementCache = new HashMap<>();
+    Map<UUID, Map<NamespacedKey, net.minecraft.advancements.Advancement>> advancementCache = new HashMap<>();
 
     public NMSHandler(AdvancementManager manager) {
         super(manager);
@@ -54,15 +54,15 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
         advancementCache.remove(uniqueId);
     }
 
-    private void addToCache(@NotNull Player player, @NotNull net.minecraft.server.v1_19_R2.Advancement advancement) {
+    private void addToCache(@NotNull Player player, @NotNull net.minecraft.advancements.Advancement advancement) {
         advancementCache.putIfAbsent(player.getUniqueId(), new HashMap<>());
-        Map<NamespacedKey, net.minecraft.server.v1_19_R2.Advancement> cache = advancementCache.get(player.getUniqueId());
-        cache.put(convert(advancement.getName()), advancement);
+        Map<NamespacedKey, net.minecraft.advancements.Advancement> cache = advancementCache.get(player.getUniqueId());
+        cache.put(convert(advancement.getId()), advancement);
     }
 
     @Nullable
-    private net.minecraft.server.v1_19_R2.Advancement getCachedAdvancement(@NotNull Player player, @NotNull NamespacedKey key) {
-        Map<NamespacedKey, net.minecraft.server.v1_19_R2.Advancement> cache = advancementCache.get(player.getUniqueId());
+    private net.minecraft.advancements.Advancement getCachedAdvancement(@NotNull Player player, @NotNull NamespacedKey key) {
+        Map<NamespacedKey, net.minecraft.advancements.Advancement> cache = advancementCache.get(player.getUniqueId());
         if (cache != null)
             return cache.get(key);
         return null;
@@ -70,7 +70,7 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
 
     @Override
     public void removePacketListener(@NotNull Player player) {
-        Channel channel = ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel;
+        Channel channel = ((CraftPlayer) player).getHandle().connection.getConnection().channel;
         channel.eventLoop().submit(() -> {
             channel.pipeline().remove(player.getUniqueId().toString());
             return null;
@@ -82,29 +82,28 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
         ChannelDuplexHandler channelDuplexHandler = new ChannelDuplexHandler() {
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object packet) throws Exception {
-                if (packet instanceof PacketPlayInAdvancements) {
-                    PacketPlayInAdvancements packetPlayInAdvancements = (PacketPlayInAdvancements) packet;
-                    PacketPlayInAdvancements.Status action = packetPlayInAdvancements.c();
-                    if (action == PacketPlayInAdvancements.Status.OPENED_TAB) {
-                        NamespacedKey key = convert(packetPlayInAdvancements.d());
+                if (packet instanceof ServerboundSeenAdvancementsPacket) {
+                    ServerboundSeenAdvancementsPacket packetPlayInAdvancements = (ServerboundSeenAdvancementsPacket) packet;
+                    ServerboundSeenAdvancementsPacket.Action action = packetPlayInAdvancements.getAction();
+                    if (action == ServerboundSeenAdvancementsPacket.Action.OPENED_TAB) {
+                        NamespacedKey key = convert(packetPlayInAdvancements.getTab());
                         Advancement tab = manager.getAdvancementTab(key);
                         Bukkit.getScheduler().runTask(manager, () -> Bukkit.getPluginManager().callEvent(new AdvancementTabChangeEvent(player, key, tab)));
-                    } else if (action == PacketPlayInAdvancements.Status.CLOSED_SCREEN) {
+                    } else if (action == ServerboundSeenAdvancementsPacket.Action.CLOSED_SCREEN) {
                         Bukkit.getScheduler().runTask(manager, () -> Bukkit.getPluginManager().callEvent(new AdvancementScreenCloseEvent(manager, player)));
                     }
                 }
                 super.channelRead(ctx, packet);
             }
         };
-        ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel.pipeline().addBefore("packet_handler", player.getUniqueId().toString(), channelDuplexHandler);
+        ((CraftPlayer) player).getHandle().connection.getConnection().channel.pipeline().addBefore("packet_handler", player.getUniqueId().toString(), channelDuplexHandler);
     }
 
     @Override
     public void sendAdvancementTabs(@NotNull Player player, @NotNull List<Advancement> advancements) {
-        Set<Advancement> roots = advancements.stream().filter(Objects::nonNull).map(Advancement::getRoot).collect(Collectors.toSet());
         AdvancementsPacketBuilder packetBuilder = new AdvancementsPacketBuilder(player);
-        for (Advancement root: roots) {
-            packetBuilder.addAdvancementAndChildren(root, null);
+        for (Advancement advancement : advancements) {
+            packetBuilder.addAdvancementAndChildren(advancement, null);
         }
         packetBuilder.send();
     }
@@ -112,24 +111,15 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
     @Override
     public void sendAdvancementTab(@NotNull Player player, @NotNull Advancement advancement) {
         AdvancementsPacketBuilder packetBuilder = new AdvancementsPacketBuilder(player);
-        packetBuilder.addAdvancementAndChildren(advancement.getRoot(), null);
+        packetBuilder.addAdvancementAndChildren(advancement, null);
         packetBuilder.send();
     }
 
+    @Override
     public void updateAdvancement(@NotNull Player player, @NotNull Advancement advancement) {
-
-        Advancement parent = advancement.getParent();
-        net.minecraft.server.v1_19_R2.Advancement nmsParent = null;
-        if (parent != null) {
-            nmsParent = getCachedAdvancement(player, parent.getKey());
-            if (nmsParent == null) {
-                return;
-            }
-        }
-
         AdvancementsPacketBuilder packetBuilder = new AdvancementsPacketBuilder(player);
-        packetBuilder.addAdvancement(advancement, nmsParent);
-
+        packetBuilder.setDoCache(false);
+        packetBuilder.addAdvancement(advancement, null);
         packetBuilder.send();
     }
 
@@ -144,29 +134,29 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
         packetBuilder.send();
 
         AdvancementsPacketBuilder removePacketBuilder = new AdvancementsPacketBuilder(player);
-        removePacketBuilder.remove.addAll(packetBuilder.nmsAdvancements.stream().map(net.minecraft.server.v1_19_R2.Advancement::getName).collect(Collectors.toList()));
+        removePacketBuilder.remove.addAll(packetBuilder.nmsAdvancements.stream().map(net.minecraft.advancements.Advancement::getId).collect(Collectors.toList()));
         removePacketBuilder.send();
     }
 
     @Override
     public void setActiveTab(@NotNull Player player, @NotNull NamespacedKey key) {
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutSelectAdvancementTab(convert(key)));
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundSelectAdvancementsTabPacket(convert(key)));
     }
 
     @Override
     public void clearAdvancements(@NotNull Player player) {
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutAdvancements(true, new ArrayList<>(), new HashSet<>(), new HashMap<>()));
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundUpdateAdvancementsPacket(true, new ArrayList<>(), new HashSet<>(), new HashMap<>()));
     }
 
-    public static MinecraftKey convert(@NotNull NamespacedKey key) {
-        return new MinecraftKey(key.getNamespace(), key.getKey());
+    public static ResourceLocation convert(@NotNull NamespacedKey key) {
+        return new ResourceLocation(key.getNamespace(), key.getKey());
     }
 
-    public static NamespacedKey convert(@NotNull MinecraftKey key) {
-        return new NamespacedKey(key.getNamespace(), key.getKey());
+    public static NamespacedKey convert(@NotNull ResourceLocation key) {
+        return new NamespacedKey(key.getNamespace(), key.getPath());
     }
 
-    public static net.minecraft.server.v1_19_R2.ItemStack convert(@NotNull ItemStack item) {
+    public static net.minecraft.world.item.ItemStack convert(@NotNull ItemStack item) {
         return CraftItemStack.asNMSCopy(item);
     }
 
@@ -182,8 +172,8 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
         }
     }
 
-    public static IChatBaseComponent convert(@NotNull JsonElement json) {
-        return IChatBaseComponent.ChatSerializer.a(json);
+    public static Component convert(@NotNull JsonElement json) {
+        return Component.Serializer.fromJson(json);
     }
 
     public class AdvancementsPacketBuilder {
@@ -192,9 +182,9 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
         private boolean doCache = true;
         private boolean showToasts = false;
 
-        protected final Collection<net.minecraft.server.v1_19_R2.Advancement> nmsAdvancements = new ArrayList<>();
-        protected final Set<MinecraftKey> remove = new HashSet<>();
-        protected final Map<MinecraftKey, AdvancementProgress> progressMap = new HashMap<>();
+        protected final Collection<net.minecraft.advancements.Advancement> nmsAdvancements = new ArrayList<>();
+        protected final Set<ResourceLocation> remove = new HashSet<>();
+        protected final Map<ResourceLocation, AdvancementProgress> progressMap = new HashMap<>();
 
         public AdvancementsPacketBuilder(@NotNull Player player) {
             this.player = player;
@@ -208,59 +198,46 @@ public class NMSHandler extends me.hazedev.advancements.api.nms.NMSHandler {
             this.showToasts = showToasts;
         }
 
-        public void addAdvancementAndChildren(@NotNull Advancement advancement, @Nullable net.minecraft.server.v1_19_R2.Advancement parent) {
-            if (advancement.isVisible(player)) {
-                net.minecraft.server.v1_19_R2.Advancement nmsAdvancement = addAdvancement(advancement, parent);
-                for (Advancement child : advancement.getChildren()) {
-                    addAdvancementAndChildren(child, nmsAdvancement);
-                }
+        public void addAdvancementAndChildren(@NotNull Advancement advancement, @Nullable net.minecraft.advancements.Advancement parent) {
+            net.minecraft.advancements.Advancement nmsAdvancement = addAdvancement(advancement, parent);
+            for (Advancement child : advancement.getChildren()) {
+                addAdvancementAndChildren(child, nmsAdvancement);
             }
         }
 
         @NotNull
-        public net.minecraft.server.v1_19_R2.Advancement addAdvancement(@NotNull Advancement advancement, @Nullable net.minecraft.server.v1_19_R2.Advancement parent) {
+        public net.minecraft.advancements.Advancement addAdvancement(@NotNull Advancement advancement, @Nullable net.minecraft.advancements.Advancement parent) {
+            ResourceLocation key = convert(advancement.getKey());
+            AdvancementDisplay display = new AdvancementDisplay(convert(advancement.getIcon(player)), convert(advancement.getTitle(player)), convert(advancement.getDescription(player)), 
+                    advancement.getBackgroundTexture() != null ? convert(advancement.getBackgroundTexture()) : null, convert(advancement.getType(player)), showToasts, advancement.isAnnounceToChat(), advancement.isHidden());
+            if (advancement.getX() != null) display.setLocation(advancement.getX(), advancement.getY());
 
-            net.minecraft.server.v1_19_R2.AdvancementProgress nmsProgress = new net.minecraft.server.v1_19_R2.AdvancementProgress();
             Map<String, Criterion> criteria = new HashMap<>();
-            Criterion criterion = new Criterion(new CriterionTriggerImpossible.a());
-            int goal = advancement.getGoal(player);
-            int progress = advancement.getProgress(player);
-            for (int i = 0; i < goal; i++) {
-                criteria.put("criterion." + i, criterion);
-            }
-            String[][] requirements = criteria.keySet().stream().map(s -> new String[]{s}).toArray(String[][]::new);
-            nmsProgress.a(criteria, requirements);
-            int awarded = 0;
-            for (String criterionName : nmsProgress.getRemainingCriteria()) {
-                if (awarded < progress) {
-                    nmsProgress.getCriterionProgress(criterionName).b(); // Award criteria
-                    ++awarded;
-                }
-            }
+            String name = "impossible";
+            criteria.put(name, new Criterion(new ImpossibleTrigger.TriggerInstance()));
 
-            MinecraftKey nmsBackgroundKey = null;
-            if (advancement.getParent() == null) {
-                NamespacedKey backgroundKey = advancement.getBackground(player);
-                if (backgroundKey != null)
-                    nmsBackgroundKey = convert(backgroundKey);
+            String[][] requirements = new String[1][1];
+            requirements[0][0] = name;
+
+            net.minecraft.advancements.Advancement nmsAdvancement = new net.minecraft.advancements.Advancement(key, parent, display, AdvancementRewards.EMPTY, criteria, requirements);
+            nmsAdvancements.add(nmsAdvancement);
+
+            AdvancementProgress advancementProgress = new AdvancementProgress();
+            advancementProgress.update(criteria, requirements);
+            if (advancement.isGranted(player)) {
+                advancementProgress.getCriterion(name).grant();
             }
-            boolean isHidden = !advancement.isVisible(player);
-            AdvancementDisplay nmsDisplay = new AdvancementDisplay(convert(advancement.getIcon(player)), convert(advancement.getJsonTitle(player)), convert(advancement.getJsonDescription(player)), nmsBackgroundKey, convert(advancement.getType(player)), showToasts && advancement.isShowToast(player), false, isHidden);
-            nmsDisplay.a(advancement.getX(player), advancement.getY(player));
-            AdvancementRewards nmsRewards = new AdvancementRewards(0, new MinecraftKey[0], new MinecraftKey[0], null);
-            net.minecraft.server.v1_19_R2.Advancement nmsAdvancement = new net.minecraft.server.v1_19_R2.Advancement(convert(advancement.getKey()), parent, nmsDisplay, nmsRewards, criteria, requirements);
+            progressMap.put(key, advancementProgress);
 
             if (doCache) {
                 addToCache(player, nmsAdvancement);
             }
-            progressMap.put(nmsAdvancement.getName(), nmsProgress);
-            nmsAdvancements.add(nmsAdvancement);
             return nmsAdvancement;
         }
 
         public void send() {
-            PacketPlayOutAdvancements packet = new PacketPlayOutAdvancements(false, nmsAdvancements, remove, progressMap);
-            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+            ClientboundUpdateAdvancementsPacket packet = new ClientboundUpdateAdvancementsPacket(false, nmsAdvancements, remove, progressMap);
+            ((CraftPlayer) player).getHandle().connection.send(packet);
         }
 
     }
