@@ -13,13 +13,23 @@ Insane Advancements is my rewrite of [ZockerAxel's CrazyAdvancementsAPI](https:/
 - Dynamic Advancements per player
 - Full control
 - Automatic saving of progress using JSON
-- Support for 1.16.5
+- Support for Minecraft versions 1.12 through 1.21
+  - 1.12.x (v1_12_R1)
+  - 1.13.x (v1_13_R1, v1_13_R2)
+  - 1.14.x (v1_14_R1)
+  - 1.15.x (v1_15_R1)
+  - 1.16.x (v1_16_R1, v1_16_R2, v1_16_R3)
+  - 1.17.x (v1_17_R1)
+  - 1.18.x (v1_18_R1, v1_18_R2)
+  - 1.19.x (v1_19_R1, v1_19_R2, v1_19_R3)
+  - 1.20.x (v1_20_R1, v1_20_R2, v1_20_R3, v1_20_R4)
+  - 1.21.x (v1_21_R1)
 - Easily send advancement toast notifications
 - [Custom events](insane-advancements-api/src/main/java/me/hazedev/advancements/api/event)
 - Set x,z co-ordinates of advancements in the menu
 - Documentation
 
-**Coming Very Soon**
-- Support for all versions 1.12+
+**Completed**
+- Support for all versions 1.12+ through 1.21
 - Everything will be configurable in a config.yml file
 - Automatically position advancements in menu (Multiple modes)
